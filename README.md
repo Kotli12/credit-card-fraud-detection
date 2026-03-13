@@ -73,7 +73,7 @@ credit-card-fraud-detection/
 
 **1. Clone the repo**
 ```bash
-git clone https://github.com/YOUR_USERNAME/credit-card-fraud-detection.git
+git clone https://github.com/Kotli12/credit-card-fraud-detection.git
 cd credit-card-fraud-detection
 ```
 
