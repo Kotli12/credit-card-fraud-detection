@@ -1,0 +1,31 @@
+# Dataset (too large for GitHub — download from Kaggle)
+data/creditcard.csv
+data/*.csv
+
+# Trained models
+models/*.pkl
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Env
+.env
+venv/
+.venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Outputs (optional — remove to track charts)
+# outputs/
