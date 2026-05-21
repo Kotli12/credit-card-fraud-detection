@@ -12,7 +12,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from sklearn.ensemble import IsolationForest
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (
     classification_report, confusion_matrix, roc_auc_score,
@@ -135,7 +135,6 @@ def train_model(
         scale_pos_weight=scale_pos_weight,
         eval_metric="aucpr",
         random_state=42,
-        use_label_encoder=False,
         n_jobs=-1,
         early_stopping_rounds=30
     )
@@ -317,11 +316,11 @@ def run_pipeline(data_path: str = "data/creditcard.csv"):
         X, y, test_size=0.2, stratify=y, random_state=42
     )
 
-    # Scale Amount
+    # Scale numeric features — fit once on all columns together so one scaler artifact covers all
+    scale_cols = ["Amount", "log_amount", "amount_zscore", "pca_magnitude"]
     scaler = StandardScaler()
-    for col in ["Amount", "log_amount", "amount_zscore", "pca_magnitude"]:
-        X_train[col] = scaler.fit_transform(X_train[[col]])
-        X_test[col] = scaler.transform(X_test[[col]])
+    X_train[scale_cols] = scaler.fit_transform(X_train[scale_cols])
+    X_test[scale_cols] = scaler.transform(X_test[scale_cols])
 
     # Isolation Forest scores
     X_train, X_test, iso_model = add_isolation_forest_scores(X_train, X_test)

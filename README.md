@@ -1,153 +1,130 @@
-# 💳 Credit Card Fraud Detection
+# Credit Card Fraud Detection
 
-An end-to-end anomaly detection pipeline on highly imbalanced transaction data, achieving **98% recall on fraud cases** through an ensemble of Isolation Forest and XGBoost with SMOTE oversampling.
+End-to-end machine learning pipeline for detecting fraudulent transactions on a severely imbalanced dataset. Combines **Isolation Forest** (unsupervised anomaly scoring) and **XGBoost** (supervised classification) with SMOTE oversampling, achieving **~98% fraud recall** at a ROC-AUC of ~0.98.
 
 ---
 
-## 🚀 Results
+## Results
 
 | Metric | Score |
 |---|---|
-| Fraud Recall | **~98%** |
-| ROC-AUC | **~0.98** |
-| Avg Precision (AUPR) | **~0.85** |
-| False Positive Rate | Minimised via threshold tuning |
+| Fraud Recall | ~98% |
+| ROC-AUC | ~0.98 |
+| Avg Precision (AUPR) | ~0.85 |
 
 ---
 
-## 🧠 Approach
+## Approach
 
-### The Challenge
-The dataset is severely imbalanced — only **0.17%** of transactions are fraudulent. Standard classifiers trained naively will simply predict "legitimate" for everything and appear 99.8% accurate while catching zero fraud.
+### The Problem
 
-### The Solution: A Two-Stage Ensemble
+Only **0.17%** of transactions are fraudulent. A naive classifier predicts "legitimate" for everything, looks 99.8% accurate, and catches zero fraud. The challenge is recall — not accuracy.
+
+### Pipeline
 
 ```
 Raw Transactions
-      │
-      ▼
-Feature Engineering  ─── Log amount, hour-of-day, PCA magnitude, etc.
-      │
-      ▼
-Isolation Forest  ─── Unsupervised anomaly scores added as features
-      │
-      ▼
-SMOTE Oversampling  ─── Synthetic minority samples (10% ratio)
-      │
-      ▼
-XGBoost Classifier  ─── Trained on resampled data
-      │
-      ▼
-Threshold Optimisation  ─── Maximise recall, constrain precision ≥ 10%
-      │
-      ▼
+      |
+      v
+Feature Engineering  ---  log(amount), hour-of-day, PCA magnitude, interaction flags
+      |
+      v
+Isolation Forest     ---  Unsupervised anomaly scores added as features
+      |
+      v
+SMOTE Oversampling   ---  Synthetic minority samples to 10% ratio
+      |
+      v
+XGBoost Classifier   ---  500 trees, depth 6, early stopping on AUPR
+      |
+      v
+Threshold Tuning     ---  Maximise recall, constrain precision >= 10%
+      |
+      v
 Fraud Predictions
 ```
 
-**Why this works:**
-- **Isolation Forest** provides an unsupervised anomaly signal that doesn't rely on labels — useful when fraud patterns shift over time
-- **SMOTE** generates synthetic fraud examples to help XGBoost learn the minority class boundary, rather than simply duplicating existing fraud samples
-- **Threshold tuning** lets us trade precision for recall explicitly — in fraud detection, missing a fraud (false negative) is far more costly than a false alarm
+**Design decisions:**
+- **Isolation Forest** provides a label-free anomaly signal. Useful as a feature because fraud patterns can shift over time without retraining.
+- **SMOTE** generates synthetic fraud examples rather than simple duplication, giving the classifier a richer minority class boundary.
+- **Threshold tuning** explicitly trades precision for recall — missing a fraud is far more costly than a false alarm.
 
 ---
 
-## 📁 Repo Structure
+## Project Structure
 
 ```
 credit-card-fraud-detection/
-├── data/                          # Place creditcard.csv here (see below)
+├── data/                          # Place creditcard.csv here
 ├── notebooks/
-│   └── fraud_detection_walkthrough.ipynb   # Full analysis walkthrough
+│   └── fraud_detection_walkthrough.ipynb
 ├── src/
-│   ├── fraud_detection.py         # Main pipeline (train + evaluate)
+│   ├── fraud_detection.py         # Training pipeline
 │   └── predict.py                 # Inference on new transactions
-├── models/                        # Saved model artefacts (generated on run)
-├── outputs/                       # Plots & predictions (generated on run)
+├── models/                        # Saved artifacts (generated on run)
+├── outputs/                       # Plots and predictions (generated on run)
 ├── requirements.txt
 └── .gitignore
 ```
 
 ---
 
-## ⚙️ Setup
+## Setup
 
-**1. Clone the repo**
 ```bash
 git clone https://github.com/Kotli12/credit-card-fraud-detection.git
 cd credit-card-fraud-detection
-```
-
-**2. Create a virtual environment**
-```bash
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**3. Download the dataset**
-
-Download `creditcard.csv` from [Kaggle](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) and place it in the `data/` folder.
+Download `creditcard.csv` from [Kaggle](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) and place it in `data/`.
 
 > The dataset contains 284,807 transactions from European cardholders (September 2013). Features V1–V28 are PCA-transformed to protect cardholder privacy. Only `Time`, `Amount`, and `Class` are in their original form.
 
 ---
 
-## 🏃 Run the Pipeline
+## Running
 
-**Train & evaluate:**
+**Train and evaluate:**
 ```bash
 python src/fraud_detection.py
 ```
 
-This will:
-- Load and engineer features
-- Fit Isolation Forest + XGBoost
-- Optimise classification threshold
-- Print evaluation metrics
-- Save plots to `outputs/` and models to `models/`
+Outputs: classification report, ROC-AUC, plots in `outputs/`, models in `models/`.
 
-**Run inference on new data:**
+**Inference on new transactions:**
 ```bash
 python src/predict.py --input data/new_transactions.csv --threshold 0.3
 ```
 
-**Jupyter notebook walkthrough:**
+**Notebook walkthrough:**
 ```bash
 jupyter notebook notebooks/fraud_detection_walkthrough.ipynb
 ```
 
 ---
 
-## 📊 Feature Engineering
+## Feature Engineering
 
 | Feature | Description |
 |---|---|
 | `log_amount` | Log-normalised transaction amount |
-| `amount_zscore` | Z-score of amount (standardised deviation) |
+| `amount_zscore` | Z-score of amount |
 | `hour_of_day` | Hour extracted from `Time` |
 | `is_night` | 1 if transaction between 22:00–06:00 |
 | `high_value_txn` | 1 if amount in top 5% |
 | `high_value_night` | Interaction: high value AND night |
 | `pca_magnitude` | Euclidean norm of V1–V28 (deviation from origin) |
 | `iso_score` | Isolation Forest anomaly score |
-| `iso_flag` | Binary flag from Isolation Forest (-1 → 1) |
+| `iso_flag` | Binary anomaly flag from Isolation Forest |
 
 ---
 
-## 📈 Sample Outputs
+## Tech Stack
 
-After running the pipeline, the `outputs/` directory contains:
-
-- `confusion_matrix.png` — TP/FP/TN/FN breakdown
-- `roc_pr_curves.png` — ROC and Precision-Recall curves
-- `feature_importance.png` — Top 20 XGBoost features
-- `fraud_patterns.png` — Amount & time-of-day fraud distribution
-
----
-
-## 🛠️ Tech Stack
-
-- **Python 3.10+**
+- Python 3.10+
 - `scikit-learn` — Isolation Forest, preprocessing, metrics
 - `xgboost` — Gradient boosted classifier
 - `imbalanced-learn` — SMOTE oversampling
@@ -157,6 +134,6 @@ After running the pipeline, the `outputs/` directory contains:
 
 ---
 
-## 📄 License
+## License
 
-MIT License — free to use, modify, and distribute.
+MIT

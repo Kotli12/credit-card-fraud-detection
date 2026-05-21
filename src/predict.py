@@ -34,9 +34,8 @@ def predict(input_path: str, threshold: float = 0.5, model_dir: str = "models"):
     X = df[feature_cols].copy()
 
     # Scale
-    for col in ["Amount", "log_amount", "amount_zscore", "pca_magnitude"]:
-        if col in X.columns:
-            X[col] = scaler.transform(X[[col]])
+    scale_cols = ["Amount", "log_amount", "amount_zscore", "pca_magnitude"]
+    X[scale_cols] = scaler.transform(X[scale_cols])
 
     # Isolation Forest
     X["iso_score"] = iso_model.decision_function(X)
