@@ -27,5 +27,8 @@ env/
 .DS_Store
 Thumbs.db
 
+# Delivery app database
+*.db
+
 # Outputs (optional — remove to track charts)
 # outputs/
